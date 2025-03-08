@@ -103,6 +103,13 @@ git clone https://github.com/yenyoong99/love_space.git
 - 将项目文件上传到网站根目录
 - 确保 `uploads` 目录有写入权限
 - 配置网站域名指向项目目录
+
+- Nginx 保护upload图片目录（只有登入用户才能浏览照片）
+```nginx
+location ~ ^/api/uploads/(.*)$ {
+  rewrite ^/api/uploads/(.*)$ /api/view_image.php?image=$1 last;
+}
+```
 </details>
 
 <details>
