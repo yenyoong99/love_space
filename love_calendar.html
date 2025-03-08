@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我们的爱情日历计数</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #a8e6cf, #dcedc1);
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #34495e;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .calendar-container {
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px; /* 更小的最大宽度 */
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .calendar-header h2 {
+            font-size: 1.2rem; /* 调整标题字体大小 */
+            color: #16a085;
+        }
+
+        .calendar-header button {
+            background: #16a085;
+            color: white;
+            border: none;
+            padding: 8px 10px; /* 减小按钮尺寸 */
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem; /* 调整按钮字体大小 */
+        }
+
+        .calendar-header button:hover {
+            background: #1abc9c;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px; /* 减小间距 */
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .weekday {
+            text-align: center;
+            font-weight: bold;
+            color: #34495e;
+            font-size: 0.8rem; /* 减小星期的字体大小 */
+        }
+
+        .calendar-day {
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px; /* 减小内边距 */
+            position: relative;
+            min-height: 60px; /* 设置格子高度 */
+        }
+
+        .calendar-day.today {
+            background: #1abc9c;
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar-day span {
+            font-size: 1rem; /* 调整日期字体大小 */
+        }
+
+        .calendar-day small {
+            font-size: 0.8rem; /* 调整小字体大小 */
+            color: #7f8c8d;
+        }
+
+        .event-marker {
+            background: #3498db;
+            color: white;
+            border-radius: 5px;
+            padding: 2px 5px;
+            font-size: 0.7rem; /* 减小事件标记字体 */
+            margin-top: 5px;
+        }
+
+        .footer {
+            margin-top: auto;
+            font-size: 0.9rem; /* 调整底部字体大小 */
+            color: #34495e;
+            text-align: center;
+        }
+
+        .event-form {
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .event-form input, .event-form button {
+            padding: 8px;
+            margin: 5px;
+            font-size: 0.9rem; /* 调整输入框字体大小 */
+            border-radius: 5px;
+            border: 1px solid #bdc3c7;
+        }
+
+        .event-form input {
+            width: 160px; /* 缩小输入框宽度 */
+        }
+
+        .event-form button {
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .event-form button:hover {
+            background: #2980b9;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .calendar-header h2 {
+                font-size: 1rem;
+            }
+
+            .calendar-header button {
+                font-size: 0.8rem;
+                padding: 5px 8px;
+            }
+
+            .calendar-day {
+                min-height: 50px; /* 减小格子高度 */
+                padding: 5px;
+            }
+
+            .footer {
+                font-size: 0.8rem;
+            }
+
+            .event-form input {
+                width: 100%; /* 输入框自适应宽度 */
+            }
+
+            .event-form button {
+                width: 100%; /* 按钮自适应宽度 */
+            }
+        }
+        
+        /* Sidebar 样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100%;
+            background: #16a085;
+            color: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            transition: left 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.active {
+            left: 0;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 50px;
+        }
+        .sidebar ul li {
+            padding: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+        }
+        .sidebar ul li a:hover {
+            text-decoration: underline;
+        }
+        .hamburger {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .hamburger span {
+            display: block;
+            width: 100%;
+            height: 4px;
+            background: #333333;
+            border-radius: 2px;
+        }
+        
+                        /* 雪花样式 */
+        #snowflakes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9999;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .snowflake {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            opacity: 0.9;
+            pointer-events: none;
+            animation: snow 10s linear infinite;
+        }
+
+        /* 雪花飘落动画 */
+        @keyframes snow {
+            0% {
+                transform: translateY(-100px) translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(calc(100vh + 100px)) translateX(calc(100vw * var(--direction)));
+                opacity: 0;
+            }
+        }
+
+        /* 漂浮效果的不同速度和方向 */
+        .snowflake:nth-child(odd) {
+            animation-duration: 12s;
+        }
+
+        .snowflake:nth-child(even) {
+            animation-duration: 8s;
+        }
+        
+        .music-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2a9d8f;
+            padding: 10px 15px;
+            border-radius: 50px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .calendar-container {
+                padding: 10px;
+            }
+
+            .calendar-header h2 {
+                font-size: 0.9rem;
+            }
+
+            .weekday {
+                font-size: 0.7rem;
+            }
+
+            .calendar-day span {
+                font-size: 0.9rem;
+            }
+
+            .calendar-day small {
+                font-size: 0.55rem;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div id="snowflakes"></div>
+
+       <!-- Hamburger -->
+    <div class="hamburger" onclick="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="message_board.html">留言板</a></li>
+            <li><a href="wishing_tree.html">爱情许愿树</a></li>
+            <li><a href="timeline.html">爱情发展</a></li>
+            <li><a href="love_calendar.html">爱情日历计数</a></li>
+            <li><a href="love_expense.html">爱情记账簿</a></li>
+            <li><a href="./api/logout.php">登出</a></li>
+        </ul>
+    </div>
+    
+    <h1>我们的爱情计数️📆</h1>
+
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <button onclick="changeMonth(-1)">⬅️ 上月</button>
+            <h2 id="currentMonth">2025年1月</h2>
+            <button onclick="changeMonth(1)">➡️ 下月</button>
+        </div>
+        <div class="calendar-grid">
+            <div class="weekday">周日</div>
+            <div class="weekday">周一</div>
+            <div class="weekday">周二</div>
+            <div class="weekday">周三</div>
+            <div class="weekday">周四</div>
+            <div class="weekday">周五</div>
+            <div class="weekday">周六</div>
+        </div>
+        
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+        </div>
+    
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- 日历格子将在这里生成 -->
+        </div>
+    </div>
+
+    <div class="event-form">
+        <input type="date" id="eventDate" />
+        <input type="text" id="eventDescription" placeholder="事件描述" />
+        <button onclick="addEvent()">添加事件</button>
+    </div>
+    
+    <div class="music-controls" id="musicControl" onclick="toggleMusic()">🎵 播放音乐</div>
+    <audio id="backgroundMusic" loop>
+    <source src="love_song.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放。
+    </audio>
+
+    <div class="footer">
+        ❤️ 今天是 <span id="todayDate"></span>，你们在一起已经 <span id="daysTogether"></span> 天啦！ ❤️
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+        
+        function checkLogin() {
+            fetch('api/check_login.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.loggedIn) {
+                        window.location.href = 'index.html';
+                    }
+                });
+        }
+        
+                // 背景音乐控制
+        let isPlaying = false;
+        const musicControl = document.getElementById('musicControl');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        function toggleMusic() {
+            if (isPlaying) {
+                backgroundMusic.pause();
+                musicControl.textContent = '🎵 播放音乐';
+            } else {
+                backgroundMusic.play();
+                musicControl.textContent = '⏸️ 暂停音乐';
+            }
+            isPlaying = !isPlaying;
+        }
+        
+        const startDate = new Date("2024-12-16");
+        const calendarGrid = document.getElementById("calendarGrid");
+        const currentMonthEl = document.getElementById("currentMonth");
+        const todayDateEl = document.getElementById("todayDate");
+        const daysTogetherEl = document.getElementById("daysTogether");
+
+        let currentDate = new Date();
+        let events = [];
+
+        async function loadEvents() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'flex';
+            try {
+                const response = await fetch('api/event_api.php');
+                const data = await response.json();
+                loadingOverlay.style.display = 'none';
+                if (data.events) {
+                    events = data.events;
+                    updateCalendar();
+                }
+            } catch (error) {
+                loadingOverlay.style.display = 'none';
+                console.error('加载事件时出错:', error);
+            }
+        }
+
+        function updateCalendar() {
+            const today = new Date();
+            todayDateEl.textContent = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+            const daysTogether = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+            daysTogetherEl.textContent = daysTogether;
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            currentMonthEl.textContent = `${year}年${month + 1}月`;
+
+            calendarGrid.innerHTML = "";
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const totalDays = lastDay.getDate();
+            const startDayOfWeek = firstDay.getDay();
+
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyCell = document.createElement("div");
+                emptyCell.className = "calendar-day";
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const dayCell = document.createElement("div");
+                dayCell.className = "calendar-day";
+                const cellDate = new Date(year, month, day);
+                // const cellDateString = cellDate.toISOString().split("T")[0];
+                const cellDateString = cellDate.toLocaleDateString("en-CA");
+
+                if (
+                    cellDate.getFullYear() === today.getFullYear() &&
+                    cellDate.getMonth() === today.getMonth() &&
+                    cellDate.getDate() === today.getDate()
+                ) {
+                    dayCell.classList.add("today");
+                }
+
+                const daysSinceStart = Math.floor((cellDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+                dayCell.innerHTML = `<span>${day}</span><small>第 ${daysSinceStart} 天</small>`;
+                
+                events.forEach(event => {
+                    if (event.event_date === cellDateString) {
+                        const eventMarker = document.createElement("div");
+                        eventMarker.className = "event-marker";
+                        eventMarker.textContent = event.title; // 确保 title 用于显示
+                        dayCell.appendChild(eventMarker);
+                    }
+                });
+
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+
+        function changeMonth(offset) {
+            currentDate.setMonth(currentDate.getMonth() + offset);
+            updateCalendar();
+        }
+
+        async function addEvent() {
+            const eventDate = document.getElementById("eventDate").value;
+            const eventDescription = document.getElementById("eventDescription").value;
+
+            if (eventDate && eventDescription) {
+                try {
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    loadingOverlay.style.display = 'flex';
+                    
+                    const response = await fetch('api/event_api.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            event_date: eventDate,
+                            title: eventDescription,
+                            description: eventDescription,
+                        }),
+                    });
+                    const data = await response.json();
+                    alert(data.message);
+                    loadingOverlay.style.display = 'none';
+                    if (response.ok) {
+                        await loadEvents();
+                    }
+                } catch (error) {
+                    loadingOverlay.style.display = 'none';
+                    console.error('添加事件时出错:', error);
+                    alert('无法添加事件，请稍后重试。');
+                }
+            } else {
+                alert("请填写完整的日期和描述！");
+            }
+        }
+        
+                            // 添加雪花
+        function createSnowflakes() {
+            const snowflakesContainer = document.getElementById('snowflakes');
+            const numberOfSnowflakes = 100; // 设置雪花的数量
+
+            for (let i = 0; i < numberOfSnowflakes; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('snowflake');
+                // 随机生成雪花的大小
+                const size = Math.random() * 5 + 2; // 雪花大小在2到7之间
+                snowflake.style.width = `${size}px`;
+                snowflake.style.height = `${size}px`;
+
+                // 随机方向
+                snowflake.style.setProperty('--direction', (Math.random() - 0.5) * 2); // -1 到 1
+
+                // 随机位置
+                snowflake.style.left = `${Math.random() * 100}vw`;
+                snowflake.style.animationDelay = `${Math.random() * 5}s`; // 随机延迟
+
+                snowflakesContainer.appendChild(snowflake);
+            }
+        }
+        
+        checkLogin();
+        loadEvents();
+        createSnowflakes();
+
+    </script>
+</body>
+</html>

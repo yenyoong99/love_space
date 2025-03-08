@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Space</title>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f0f4c3, #a8e6cf);
+            transition: background 0.5s;
+            animation: fadeIn 2s ease-in;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #333;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        .emotion-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .emotion-buttons button {
+            padding: 15px 25px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .emotion-buttons button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .anger {
+            background-color: #ff6b6b;
+            color: white;
+        }
+
+        .sadness {
+            background-color: #1e88e5;
+            color: white;
+        }
+
+        .calm {
+            background-color: #00c853;
+            color: white;
+        }
+
+        .interaction-box {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px dashed #aaa;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        .interaction-box p {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .interaction-box textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: none;
+            outline: none;
+            margin-bottom: 15px;
+        }
+
+        .interaction-box button {
+            padding: 10px 20px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .interaction-box button:hover {
+            background-color: #ffb74d;
+            transform: scale(1.1);
+        }
+
+        .pet-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            cursor: pointer;
+            width: 70px;
+            height: 70px;
+            animation: float 2s infinite ease-in-out;
+        }
+
+        .pet-container img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+        }
+
+        .pet-container img:hover {
+            transform: scale(1.2);
+        }
+
+        .quote-box {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 2s;
+        }
+
+        .quote-box p {
+            font-size: 1.1rem;
+            color: #555;
+            text-align: center;
+        }
+
+        .music-player {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .music-player button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .music-player button:hover {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <h1>欢迎来到情绪空间</h1>
+
+    <div class="emotion-buttons">
+        <button class="anger" onclick="changeMood('anger')">😡 愤怒</button>
+        <button class="sadness" onclick="changeMood('sadness')">😢 悲伤</button>
+        <button class="calm" onclick="changeMood('calm')">😌 平静</button>
+    </div>
+
+    <div class="interaction-box">
+        <p>写下你的想法或烦恼：</p>
+        <textarea id="emotionTextarea" rows="5" placeholder="倾诉你的内心..."></textarea>
+        <button onclick="submitEmotion()">提交</button>
+    </div>
+
+    <div class="pet-container" onclick="comfortMessage()">
+        <img src="pet_icon.png" alt="宠物图标">
+    </div>
+
+    <div class="quote-box">
+        <p id="quote">"每一天都是新的开始。"</p>
+    </div>
+
+    <div class="music-player">
+        <span>🎵</span>
+        <button onclick="playMusic()">播放音乐</button>
+        <button onclick="pauseMusic()">暂停</button>
+    </div>
+
+    <audio id="backgroundMusic" loop>
+        <source src="relaxing_music.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const quotes = [
+            "每一天都是新的开始。",
+            "你比你想象的更强大。",
+            "保持微笑，事情会好起来的。",
+            "勇敢面对，未来属于你。"
+        ];
+
+        function changeMood(mood) {
+            const body = document.body;
+            const messages = {
+                anger: "生气是正常的情绪，把它写下来释放吧！",
+                sadness: "感到难过吗？写下你的感受，我们支持你。",
+                calm: "深呼吸，放松心情。你做得很好。"
+            };
+
+            const backgrounds = {
+                anger: 'linear-gradient(135deg, #ff9a9e, #ff6b6b)',
+                sadness: 'linear-gradient(135deg, #a18cd1, #1e88e5)',
+                calm: 'linear-gradient(135deg, #d4fc79, #00c853)'
+            };
+
+            body.style.background = backgrounds[mood];
+            document.querySelector('.interaction-box p').textContent = messages[mood];
+
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('quote').textContent = randomQuote;
+        }
+
+        function submitEmotion() {
+            const text = document.getElementById('emotionTextarea').value.trim();
+
+            if (text) {
+                alert('你的信息已被记录。你并不孤单！');
+                document.getElementById('emotionTextarea').value = '';
+            } else {
+                alert('请写点内容来表达你的感受。');
+            }
+        }
+
+        function comfortMessage() {
+            alert('你的宠物陪伴着你！你是被关爱和珍惜的。🐾');
+        }
+
+        function playMusic() {
+            document.getElementById('backgroundMusic').play();
+        }
+
+        function pauseMusic() {
+            document.getElementById('backgroundMusic').pause();
+        }
+    </script>
+</body>
+</html>

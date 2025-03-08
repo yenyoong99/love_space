@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>爱情许愿树 🌳</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #FFECD2, #FCB5AC);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+        h1 {
+            font-size: 2.4rem;
+            color: #ff7e5f;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        /* Sidebar 样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100%;
+            background: #ff7e5f;
+            color: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            transition: left 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.active {
+            left: 0;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 50px;
+        }
+        .sidebar ul li {
+            padding: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+        }
+        .sidebar ul li a:hover {
+            text-decoration: underline;
+        }
+        .hamburger {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .hamburger span {
+            display: block;
+            width: 100%;
+            height: 4px;
+            background: #333333;
+            border-radius: 2px;
+        }
+        .tree-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            margin: 20px auto;
+            background: url('imgs/tree.png') center/contain no-repeat;
+        }
+        .wish {
+            position: absolute;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            padding: 10px 15px;
+            font-size: 14px;
+            max-width: 120px;
+            text-align: center;
+            animation: floatIn 3s ease forwards;
+        }
+        @keyframes floatIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .wish-input {
+            margin: 20px 0;
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        textarea, select, button {
+            margin: 10px 0;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            font-size: 16px;
+        }
+        button {
+            background: #ff7e5f;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background: #ff9678;
+        }
+        .back-to-board {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #ff7e5f;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+        
+        /* 雪花样式 */
+        #snowflakes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9999;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .snowflake {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            opacity: 0.9;
+            pointer-events: none;
+            animation: snow 10s linear infinite;
+        }
+
+        /* 雪花飘落动画 */
+        @keyframes snow {
+            0% {
+                transform: translateY(-100px) translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(calc(100vh + 100px)) translateX(calc(100vw * var(--direction)));
+                opacity: 0;
+            }
+        }
+
+        /* 漂浮效果的不同速度和方向 */
+        .snowflake:nth-child(odd) {
+            animation-duration: 12s;
+        }
+
+        .snowflake:nth-child(even) {
+            animation-duration: 8s;
+        }
+        
+        .music-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff7e5f;
+            padding: 10px 15px;
+            border-radius: 50px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* 手机自适应 */
+        @media (max-width: 768px) {
+            body {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .tree-container {
+                height: 300px;
+            }
+            .wish {
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+            .wish-input {
+                margin-bottom: 80px; /* 留出足够空间避免按钮遮挡 */
+            }
+            .music-controls {
+                bottom: 10px; /* 将音乐按钮位置稍微下移 */
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div id="snowflakes"></div>
+
+        <!-- Hamburger -->
+    <div class="hamburger" onclick="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="message_board.html">留言板</a></li>
+            <li><a href="wishing_tree.html">爱情许愿树</a></li>
+            <li><a href="timeline.html">爱情发展</a></li>
+            <li><a href="love_calendar.html">爱情日历计数</a></li>
+            <li><a href="love_expense.html">爱情记账簿</a></li>
+            <li><a href="./api/logout.php">登出</a></li>
+
+        </ul>
+    </div>
+    
+    <!--<a href="index.html" class="back-to-board">⬅️ 留言板</a>-->
+    <h1>我们的爱情许愿树 🌳</h1>
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+    <div class="tree-container" id="treeContainer"></div>
+    <div class="wish-input">
+        <h2>写下你的愿望</h2>
+        <select id="sender_name">
+            <option value="哥哥">哥哥</option>
+            <option value="宝宝">宝宝</option>
+        </select>
+        <textarea id="wish_message" rows="5" placeholder="写下你的愿望"></textarea>
+        <button onclick="submitWish()">挂上愿望</button>
+    </div>
+    
+    <div class="music-controls" id="musicControl" onclick="toggleMusic()">🎵 播放音乐</div>
+    <audio id="backgroundMusic" loop>
+        <source src="love_song.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放。
+    </audio>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+        const treeContainer = document.getElementById('treeContainer');
+        
+        function checkLogin() {
+            fetch('api/check_login.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.loggedIn) {
+                        window.location.href = 'index.html';
+                    }
+                });
+        }
+        
+        // 背景音乐控制
+        let isPlaying = false;
+        const musicControl = document.getElementById('musicControl');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        function toggleMusic() {
+            if (isPlaying) {
+                backgroundMusic.pause();
+                musicControl.textContent = '🎵 播放音乐';
+            } else {
+                backgroundMusic.play();
+                musicControl.textContent = '⏸️ 暂停音乐';
+            }
+            isPlaying = !isPlaying;
+        }
+
+        // 提交愿望
+        function submitWish() {
+            const senderName = document.getElementById('sender_name').value;
+            const wishMessage = document.getElementById('wish_message').value;
+
+            if (!wishMessage.trim()) {
+                alert('愿望不能为空！');
+                return;
+            }
+
+            const requestBody = {
+                sender: senderName,
+                message: wishMessage
+            };
+            
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'flex';
+
+            fetch('api/submit_wish.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingOverlay.style.display = 'none';
+                if (data.success) {
+                    renderWish(data.wish);
+                    document.getElementById('wish_message').value = ''; // 清空输入框
+                } else {
+                    alert('提交失败，请稍后重试。');
+                }
+            })
+            .catch(() => alert('网络错误，请稍后重试。'));
+            loadingOverlay.style.display = 'none';
+        }
+
+        // 渲染愿望
+        function renderWish(wish) {
+            const wishElement = document.createElement('div');
+            wishElement.classList.add('wish');
+            wishElement.style.left = `${wish.x}%`;
+            wishElement.style.top = `${wish.y}%`;
+            wishElement.innerHTML = `<strong>${wish.sender}</strong>: ${wish.message}`;
+            
+            // 添加鼠标事件
+            wishElement.addEventListener('mouseover', () => bringToFront(wishElement));
+            wishElement.addEventListener('click', () => bringToFront(wishElement));
+            
+            // 将愿望添加到树容器
+            treeContainer.appendChild(wishElement);
+        }
+        
+        function bringToFront(element) {
+            // 先将所有愿望的 z-index 重置
+            const wishes = document.querySelectorAll('.wish');
+            wishes.forEach(wish => (wish.style.zIndex = '1'));
+        
+            // 提升当前元素的 z-index
+            element.style.zIndex = '1000';
+        }
+
+        // 加载愿望
+        function loadWishes() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'flex';
+            
+            fetch('api/load_wishes.php')
+                .then(response => response.json())
+                .then(data => {
+                    loadingOverlay.style.display = 'none';
+                    if (data.success) {
+                        data.wishes.forEach(renderWish);
+                    }
+                });
+            
+            loadingOverlay.style.display = 'none';
+        }
+        
+                    // 添加雪花
+        function createSnowflakes() {
+            const snowflakesContainer = document.getElementById('snowflakes');
+            const numberOfSnowflakes = 100; // 设置雪花的数量
+
+            for (let i = 0; i < numberOfSnowflakes; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('snowflake');
+                // 随机生成雪花的大小
+                const size = Math.random() * 5 + 2; // 雪花大小在2到7之间
+                snowflake.style.width = `${size}px`;
+                snowflake.style.height = `${size}px`;
+
+                // 随机方向
+                snowflake.style.setProperty('--direction', (Math.random() - 0.5) * 2); // -1 到 1
+
+                // 随机位置
+                snowflake.style.left = `${Math.random() * 100}vw`;
+                snowflake.style.animationDelay = `${Math.random() * 5}s`; // 随机延迟
+
+                snowflakesContainer.appendChild(snowflake);
+            }
+        }
+        
+        checkLogin();
+        loadWishes();
+        createSnowflakes();
+    </script>
+</body>
+</html>

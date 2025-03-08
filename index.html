@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>访问我们的爱情日志</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        /* 保持原有的样式不变 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #FFDEE9, #B5FFFC);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        h1 {
+            font-size: 2rem;
+            color: #ff4081;
+            margin-bottom: 20px;
+        }
+        input[type="password"], button {
+            padding: 10px;
+            font-size: 1rem;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+        }
+        input[type="password"] {
+            border: 1px solid #ccc;
+            width: 80%;
+            max-width: 300px;
+        }
+        button {
+            background: #ff4081;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #ff5c93;
+        }
+        #biometricButton {
+            background: #4CAF50;
+            margin-top: 10px;
+        }
+        #biometricButton:hover {
+            background: #45a049;
+        }
+        #installPrompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 15px 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>进入我们的爱情日志</h1>
+    <input type="password" id="password" placeholder="请输入访问密码">
+    <button onclick="verifyPassword()">👉 进入 👈</button>
+    <button id="biometricButton" style="display: none;">使用Face ID登录</button>
+
+    <script>
+        let publicKeyCredential;
+
+        async function checkLogin() {
+            try {
+                const response = await fetch('api/check_login.php');
+                const data = await response.json();
+                if (data.loggedIn) {
+                    window.location.href = 'message_board.html';
+                }
+            } catch (error) {
+                console.error('检查登录状态失败:', error);
+            }
+        }
+
+        async function verifyPassword() {
+            const password = document.getElementById('password').value;
+            try {
+                const response = await fetch('api/verify_password.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    await registerCredential(password);
+                    window.location.href = 'message_board.html';
+                } else {
+                    alert('密码错误，请重试！');
+                }
+            } catch (err) {
+                alert('网络错误，请稍后重试！');
+            }
+        }
+
+        async function registerCredential(password) {
+            if (window.PublicKeyCredential) {
+                try {
+                    const challenge = new Uint8Array(32);
+                    window.crypto.getRandomValues(challenge);
+                    
+                    const createCredentialOptions = {
+                        publicKey: {
+                            challenge: challenge,
+                            rp: { name: "爱情日志" },
+                            user: {
+                                id: new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]),
+                                name: "Yong❤️Kang",
+                                displayName: "亲爱的",
+                            },
+                            pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                            authenticatorSelection: {
+                                authenticatorAttachment: "platform",
+                                userVerification: "required",
+                            },
+                            timeout: 60000,
+                        }
+                    };
+
+                    publicKeyCredential = await navigator.credentials.create(createCredentialOptions);
+                    localStorage.setItem('credentialId', btoa(String.fromCharCode.apply(null, new Uint8Array(publicKeyCredential.rawId))));
+                    localStorage.setItem('encryptedPassword', btoa(password));
+                    
+                    document.getElementById('biometricButton').style.display = 'block';
+                } catch (err) {
+                    console.error("注册凭证失败：", err);
+                }
+            }
+        }
+
+        async function biometricLogin() {
+            if (window.PublicKeyCredential) {
+                try {
+                    const challenge = new Uint8Array(32);
+                    window.crypto.getRandomValues(challenge);
+                    
+                    const credentialId = Uint8Array.from(atob(localStorage.getItem('credentialId')), c => c.charCodeAt(0));
+                    
+                    const getCredentialOptions = {
+                        publicKey: {
+                            challenge: challenge,
+                            allowCredentials: [{
+                                id: credentialId,
+                                type: 'public-key',
+                            }],
+                            userVerification: "required",
+                            timeout: 60000,
+                        }
+                    };
+
+                    await navigator.credentials.get(getCredentialOptions);
+                    
+                    // 如果上面的调用成功，意味着生物识别验证通过
+                    const encryptedPassword = localStorage.getItem('encryptedPassword');
+                    if (encryptedPassword) {
+                        const password = atob(encryptedPassword);
+                        const response = await fetch('api/verify_password.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            window.location.href = 'message_board.html';
+                        } else {
+                            alert('验证失败，请重试！');
+                        }
+                    } else {
+                        alert('未找到保存的密码，请先使用密码登录');
+                    }
+                } catch (err) {
+                    console.error("生物识别登录失败：", err);
+                    alert("Face ID验证失败，请使用密码登录。");
+                }
+            }
+        }
+
+        function checkBiometricSupport() {
+            if (window.PublicKeyCredential && localStorage.getItem('credentialId')) {
+                document.getElementById('biometricButton').style.display = 'block';
+            }
+        }
+
+        document.getElementById('biometricButton').addEventListener('click', biometricLogin);
+
+        checkLogin();
+        checkBiometricSupport();
+        
+    </script>
+</body>
+</html>

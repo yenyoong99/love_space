@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我们的爱情记账簿</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            min-height: 100vh;
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .tab-active {
+            border-bottom: 2px solid #ff758c;
+            color: #ff758c;
+        }
+        
+        /* Sidebar 样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100%;
+            background: #ff9a9e;
+            color: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            transition: left 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.active {
+            left: 0;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 50px;
+        }
+        .sidebar ul li {
+            padding: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+        }
+        .sidebar ul li a:hover {
+            text-decoration: underline;
+        }
+        .hamburger {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .hamburger span {
+            display: block;
+            width: 100%;
+            height: 4px;
+            background: #333333;
+            border-radius: 2px;
+        }
+        
+        /* 雪花样式 */
+        #snowflakes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9999;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .snowflake {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            opacity: 0.9;
+            pointer-events: none;
+            animation: snow 10s linear infinite;
+        }
+
+        /* 雪花飘落动画 */
+        @keyframes snow {
+            0% {
+                transform: translateY(-100px) translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(calc(100vh + 100px)) translateX(calc(100vw * var(--direction)));
+                opacity: 0;
+            }
+        }
+
+        /* 漂浮效果的不同速度和方向 */
+        .snowflake:nth-child(odd) {
+            animation-duration: 12s;
+        }
+
+        .snowflake:nth-child(even) {
+            animation-duration: 8s;
+        }
+
+         /* 模态框样式 */
+         .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px; /* Adjust this value as needed */
+            display: inline-block;
+        }
+        .expense-description {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col items-center justify-start p-4">
+    <!-- 雪花容器 -->
+    <div id="snowflakes"></div>
+    
+    <!-- Hamburger -->
+    <div class="hamburger" onclick="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="message_board.html">留言板</a></li>
+            <li><a href="wishing_tree.html">爱情许愿树</a></li>
+            <li><a href="timeline.html">爱情发展</a></li>
+            <li><a href="love_calendar.html">爱情日历计数</a></li>
+            <li><a href="love_expense.html">爱情记账簿</a></li>
+            <li><a href="./api/logout.php">登出</a></li>
+        </ul>
+    </div>
+    
+    <h1 class="text-4xl font-bold text-gray-800 mb-8 mt-4">爱情记账簿💖</h1>
+
+    <div class="card w-full max-w-md rounded-lg shadow-lg p-6 mb-8">
+        <div class="flex justify-around mb-6">
+            <button id="manualTab" class="tab-active px-4 py-2 text-lg font-semibold focus:outline-none">
+                手动记录
+            </button>
+            <button id="aiTab" class="px-4 py-2 text-lg font-semibold focus:outline-none">
+                AI记录
+            </button>
+        </div>
+
+        <form id="expenseForm" class="space-y-4">
+            <div id="manualInputs">
+                <input type="date" id="expenseDate" class="w-full p-2 border rounded" required>
+                <input type="number" step="0.01" id="expenseAmount" placeholder="金额" class="w-full p-2 border rounded mt-2" required>
+                <input type="text" id="expenseDescription" placeholder="描述" class="w-full p-2 border rounded mt-2" required>
+                <select id="expenseCategory" class="w-full p-2 border rounded mt-2" required>
+                    <option value="">选择类别</option>
+                    <option value="餐饮">餐饮</option>
+                    <option value="购物">购物</option>
+                    <option value="交通">交通</option>
+                    <option value="娱乐">娱乐</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div id="aiInputs" class="hidden">
+                <div class="relative border-2 border-dashed border-gray-400 rounded-lg p-6 text-center">
+                    <input type="file" id="fileUpload" name="bill" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">点击或拖拽上传账单图片</p>
+                </div>
+                <div id="uploadStatus" class="mt-2 text-sm text-gray-600"></div>
+            </div>
+            <button type="submit" class="w-full bg-pink-500 text-white p-2 rounded hover:bg-pink-600 transition duration-300">
+                添加支出
+            </button>
+        </form>
+    </div>
+
+    <div class="card w-full max-w-md rounded-lg shadow-lg p-6">
+        <h2 class="text-2xl font-semibold mb-4">支出记录</h2>
+        <div class="flex justify-between items-center mb-4">
+            <button id="prevMonth" class="text-pink-500 hover:text-pink-700">
+                <i class="fas fa-chevron-left"></i> 上个月
+            </button>
+            <span id="currentMonth" class="text-lg font-semibold"></span>
+            <button id="nextMonth" class="text-pink-500 hover:text-pink-700">
+                下个月 <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        <div id="monthlyTotal" class="text-xl font-bold text-pink-600 mb-4"></div>
+        <div id="expenseList" class="space-y-2">
+            <!-- 支出列表将在这里动态生成 -->
+        </div>
+        <div class="flex justify-between items-center mt-4">
+            <button id="prevPage" class="text-pink-500 hover:text-pink-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-chevron-left"></i> 上一页
+            </button>
+            <span id="currentPage" class="text-lg font-semibold"></span>
+            <button id="nextPage" class="text-pink-500 hover:text-pink-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                下一页 <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        <button id="showGraph" class="w-full bg-pink-500 text-white p-2 rounded hover:bg-pink-600 transition duration-300 mt-4">
+            显示分类开支图表
+        </button>
+        </div>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div id="confirmationModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-4">确认支出信息</h2>
+        <form id="confirmationForm" class="space-y-4">
+            <div>
+                <label for="confirmDate" class="block text-sm font-medium text-gray-700">日期:</label>
+                <input type="date" id="confirmDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
+            </div>
+            <div>
+                <label for="confirmAmount" class="block text-sm font-medium text-gray-700">金额:</label>
+                <input type="number" id="confirmAmount" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
+            </div>
+            <div>
+                <label for="confirmDescription" class="block text-sm font-medium text-gray-700">描述:</label>
+                <input type="text" id="confirmDescription" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
+            </div>
+            <div>
+                <label for="confirmCategory" class="block text-sm font-medium text-gray-700">类别:</label>
+                <select id="confirmCategory" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
+                    <option value="餐饮">餐饮</option>
+                    <option value="购物">购物</option>
+                    <option value="交通">交通</option>
+                    <option value="娱乐">娱乐</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="submit" id="confirmExpense" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 transition duration-300">确认添加</button>
+                <button type="button" id="cancelExpense" class="bg-red-500 text-white p-2 rounded hover:bg-red-600 transition duration-300">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+        let currentPage = 1;
+        
+        // 检查是否已登录
+        function checkLogin() {
+            fetch('api/check_login.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.loggedIn) {
+                        window.location.href = 'index.html';
+                    }
+                });
+        }
+        
+        // 背景音乐控制
+        let isPlaying = false;
+        const musicControl = document.getElementById('musicControl');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        function toggleMusic() {
+            if (isPlaying) {
+                backgroundMusic.pause();
+                musicControl.textContent = '🎵 播放音乐';
+            } else {
+                backgroundMusic.play();
+                musicControl.textContent = '⏸️ 暂停音乐';
+            }
+            isPlaying = !isPlaying;
+        }
+        
+        // 添加雪花
+        function createSnowflakes() {
+            const snowflakesContainer = document.getElementById('snowflakes');
+            const numberOfSnowflakes = 100; // 设置雪花的数量
+
+            for (let i = 0; i < numberOfSnowflakes; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('snowflake');
+                // 随机生成雪花的大小
+                const size = Math.random() * 5 + 2; // 雪花大小在2到7之间
+                snowflake.style.width = `${size}px`;
+                snowflake.style.height = `${size}px`;
+
+                // 随机方向
+                snowflake.style.setProperty('--direction', (Math.random() - 0.5) * 2); // -1 到 1
+
+                // 随机位置
+                snowflake.style.left = `${Math.random() * 100}vw`;
+                snowflake.style.animationDelay = `${Math.random() * 5}s`; // 随机延迟
+
+                snowflakesContainer.appendChild(snowflake);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const currentPageSpan = document.getElementById('currentPage');
+            let currentPage = 1;
+            let totalPages = 1;
+    
+            prevPageBtn.addEventListener('click', () => changePage(-1));
+            nextPageBtn.addEventListener('click', () => changePage(1));
+            
+            const expenseForm = document.getElementById('expenseForm');
+            const expenseList = document.getElementById('expenseList');
+            const fileUpload = document.getElementById('fileUpload');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const manualTab = document.getElementById('manualTab');
+            const aiTab = document.getElementById('aiTab');
+            const manualInputs = document.getElementById('manualInputs');
+            const aiInputs = document.getElementById('aiInputs');
+            const prevMonthBtn = document.getElementById('prevMonth');
+            const nextMonthBtn = document.getElementById('nextMonth');
+            const currentMonthSpan = document.getElementById('currentMonth');
+            const monthlyTotalDiv = document.getElementById('monthlyTotal');
+
+            let currentDate = new Date();
+
+            manualTab.addEventListener('click', () => switchTab('manual'));
+            aiTab.addEventListener('click', () => switchTab('ai'));
+            prevMonthBtn.addEventListener('click', () => changeMonth(-1));
+            nextMonthBtn.addEventListener('click', () => changeMonth(1));
+
+            function switchTab(tab) {
+                if (tab === 'manual') {
+                    manualTab.classList.add('tab-active');
+                    aiTab.classList.remove('tab-active');
+                    manualInputs.classList.remove('hidden');
+                    aiInputs.classList.add('hidden');
+                    enableManualInputs(true);
+                } else {
+                    aiTab.classList.add('tab-active');
+                    manualTab.classList.remove('tab-active');
+                    aiInputs.classList.remove('hidden');
+                    manualInputs.classList.add('hidden');
+                    enableManualInputs(false);
+                }
+            }
+
+            function enableManualInputs(enable) {
+                const inputs = manualInputs.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    input.disabled = !enable;
+                    if (enable) {
+                        input.setAttribute('required', '');
+                    } else {
+                        input.removeAttribute('required');
+                    }
+                });
+            }
+
+            function changeMonth(offset) {
+                currentDate.setMonth(currentDate.getMonth() + offset);
+                updateMonthDisplay();
+                loadExpenses();
+            }
+
+            function updateMonthDisplay() {
+                currentMonthSpan.textContent = `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月`;
+            }
+
+            // 初始化月份显示
+            updateMonthDisplay();
+
+            // 加载支出记录
+            loadExpenses();
+
+            expenseForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (!aiInputs.classList.contains('hidden')) {
+                    const file = fileUpload.files[0];
+                    if (file) {
+                        uploadBill(file);
+                    } else {
+                        alert('请选择一个账单图片文件。');
+                    }
+                } else {
+                    addExpense();
+                }
+            });
+
+            fileUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadStatus.textContent = '已选择文件: ' + file.name;
+                }
+            });
+
+            function addExpense() {
+                const date = document.getElementById('expenseDate').value;
+                const amount = document.getElementById('expenseAmount').value;
+                const description = document.getElementById('expenseDescription').value;
+                const category = document.getElementById('expenseCategory').value;
+
+                const expense = { date, amount, description, category };
+
+                // 这里应该发送到后端API
+                fetch('api/expenses.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(expense)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadExpenses(); // 重新加载支出列表
+                        expenseForm.reset();
+                    } else {
+                        alert('添加支出失败，请重试。');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('发生错误，请重试。');
+                });
+            }
+            
+            function changePage(offset) {
+                currentPage += offset;
+                loadExpenses();
+            }
+
+            function updatePageDisplay() {
+                currentPageSpan.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+            }
+
+            function loadExpenses() {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth() + 1;
+                
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.style.display = 'flex';
+            
+                fetch(`api/expenses.php?year=${year}&month=${month}&page=${currentPage}`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingOverlay.style.display = 'none';
+                    expenseList.innerHTML = '';
+                    data.expenses.forEach(expense => {
+                        const expenseElement = document.createElement('div');
+                        expenseElement.className = 'bg-white p-3 rounded shadow flex justify-between items-center';
+                        expenseElement.innerHTML = `
+                            <div>
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold">${expense.date}</span>
+                                    <span class="text-green-600 font-bold ml-4">RM ${expense.amount}</span>
+                                </div>
+                                <div class="text-sm text-gray-600 expense-description">
+                                    <span class="truncate">${expense.description}</span>
+                                    <span class="full-text" style="display: none;">${expense.description}</span>
+                                </div>
+                                <div class="text-xs text-gray-500">${expense.category}</div>
+                            </div>
+                            <button class="delete-expense bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" data-id="${expense.id}">
+                                删除
+                            </button>
+                        `;
+                        expenseList.appendChild(expenseElement);
+
+                        // Add click event to toggle description
+                        const descriptionElement = expenseElement.querySelector('.expense-description');
+                        descriptionElement.addEventListener('click', function() {
+                            const truncatedSpan = this.querySelector('.truncate');
+                            const fullSpan = this.querySelector('.full-text');
+                            if (truncatedSpan.style.display === 'none') {
+                                truncatedSpan.style.display = 'inline';
+                                fullSpan.style.display = 'none';
+                            } else {
+                                truncatedSpan.style.display = 'none';
+                                fullSpan.style.display = 'inline';
+                            }
+                        });
+                    });
+                    monthlyTotalDiv.textContent = `本月总支出：RM ${parseFloat(data.totalAmount).toFixed(2)}`;
+                    totalPages = data.totalPages;
+                    updatePageDisplay();
+            
+                    // 为所有删除按钮添加事件监听器
+                    document.querySelectorAll('.delete-expense').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const expenseId = this.getAttribute('data-id');
+                            deleteExpense(expenseId);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingOverlay.style.display = 'none';
+                    alert('加载支出记录失败，请重试。');
+                });
+            }
+            
+            function deleteExpense(expenseId) {
+                if (confirm('确定要删除这条支出记录吗？')) {
+                    
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    loadingOverlay.style.display = 'flex';
+                    
+                    fetch(`api/delete_expense.php`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ id: expenseId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        loadingOverlay.style.display = 'none';
+                        if (data.success) {
+                            loadExpenses(); // 重新加载支出列表
+                        } else {
+                            alert('删除支出失败，请重试。');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        loadingOverlay.style.display = 'none';
+                        alert('发生错误，请重试。');
+                    });
+                }
+            }
+
+            function uploadBill(file) {
+                const formData = new FormData();
+                formData.append('bill', file);
+
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.style.display = 'flex';
+
+                fetch('api/upload_and_process_bill.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingOverlay.style.display = 'none';
+                    if (data.success) {
+                        showConfirmationModal(data.data);
+                    } else {
+                        uploadStatus.textContent = '处理失败，请手动添加支出。';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingOverlay.style.display = 'none';
+                    uploadStatus.textContent = '处理过程中发生错误，请重试。';
+                });
+            }
+
+            function showConfirmationModal(data) {
+                const modal = document.getElementById('confirmationModal');
+                const dateInput = document.getElementById('confirmDate');
+                const amountInput = document.getElementById('confirmAmount');
+                const descriptionInput = document.getElementById('confirmDescription');
+                const categorySelect = document.getElementById('confirmCategory');
+                const confirmForm = document.getElementById('confirmationForm');
+                const cancelBtn = document.getElementById('cancelExpense');
+
+                // Populate the form with AI-processed data
+                dateInput.value = data.date;
+                amountInput.value = data.amount;
+                descriptionInput.value = data.description;
+                categorySelect.value = data.category;
+
+                modal.style.display = 'block';
+
+                confirmForm.onsubmit = function(e) {
+                    e.preventDefault();
+                    const updatedData = {
+                        date: dateInput.value,
+                        amount: amountInput.value,
+                        description: descriptionInput.value,
+                        category: categorySelect.value
+                    };
+                    addExpenseFromAI(updatedData);
+                    modal.style.display = 'none';
+                };
+
+                cancelBtn.onclick = function() {
+                    modal.style.display = 'none';
+                };
+            }
+
+            function addExpenseFromAI(data) {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.style.display = 'flex';
+                
+                fetch('api/add_expense.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    loadingOverlay.style.display = 'none';
+                    if (result.success) {
+                        uploadStatus.textContent = 'AI处理完成，已添加支出记录。';
+                        loadExpenses();
+                        fileUpload.value = '';
+                    } else {
+                        uploadStatus.textContent = '添加支出失败，请手动添加。';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingOverlay.style.display = 'none';
+                    uploadStatus.textContent = '添加支出时发生错误，请重试。';
+                });
+            }
+
+            const showGraphBtn = document.getElementById('showGraph');
+            const modal = document.getElementById('myModal');
+            const closeModal = document.getElementsByClassName('close')[0];
+            const expenseChartCanvas = document.getElementById('expenseChart');
+            let expenseChart; // 用于保存图表实例
+
+            showGraphBtn.addEventListener('click', function() {
+                modal.style.display = 'block';
+                drawChart();
+            });
+
+            closeModal.onclick = function() {
+                modal.style.display = 'none';
+            }
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            function drawChart() {
+                // 如果图表实例已经存在，先销毁它
+                if (expenseChart) {
+                    expenseChart.destroy();
+                }
+
+                getExpenseData().then(expenseData => {
+                    const ctx = expenseChartCanvas.getContext('2d');
+                    expenseChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: expenseData.labels,
+                            datasets: [{
+                                data: expenseData.data,
+                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: '各分类支出百分比'
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+
+            function getExpenseData() {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth() + 1;
+
+                return fetch(`api/expenses.php?action=category_totals&year=${year}&month=${month}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const labels = data.map(item => item.category);
+                        const amounts = data.map(item => parseFloat(item.total));
+                        return {
+                            labels: labels,
+                            data: amounts
+                        };
+                    })
+                    .catch(error => {
+                        console.error('Error fetching category totals:', error);
+                        return {
+                            labels: [],
+                            data: []
+                        };
+                    });
+            }
+        });
+        
+        checkLogin(); // 检查登录状态
+        createSnowflakes();
+    </script>
+</body>
+</html>
+

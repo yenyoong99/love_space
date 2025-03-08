@@ -1,0 +1,15 @@
+{
+  "name": "LoveStory",
+  "short_name": "L❤️S",
+  "description": "Our Love",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "196x196",
+      "type": "image/png"
+    }
+  ]
+}
