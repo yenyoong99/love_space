@@ -52,7 +52,7 @@
 <table>
 <tr>
 <td><img src="preview/login.jpg" alt="登录预览"/></td>
-<td><img src="preview/love_tree.jpg" alt="许愿树预览"/></td>
+<td><img src="preview/message_board.jpg" alt="爱情留言板"/></td>
 </tr>
 <tr>
 <td><img src="preview/love_tree.jpg" alt="许愿树预览"/></td>
